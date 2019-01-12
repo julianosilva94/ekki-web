@@ -1,11 +1,36 @@
 import React, { Component } from 'react';
+import { Box, Heading, Button, Tabs, Tab } from 'grommet';
+
 import { connect } from 'react-redux';
-import { logout } from '../actions/auth'
+import { getData } from '../actions/user';
+
+import AppBar from './AppBar';
+import Transfers from './Transfers';
+import Contacts from './Contacts';
 
 class Dashboard extends Component {
+  componentWillMount = async () => {
+      await this.props.getData();
+  }
+
   render() {
     return (
-      <h1>Dashboard</h1>
+      <Box>
+        <AppBar history={this.props.history} />
+        <Box margin={{ top: '60px'}} pad='medium'>
+          <Tabs>
+            <Tab title='Transfers'>
+              <Transfers/>
+            </Tab>
+            <Tab title='Credit Cards'>
+
+            </Tab>
+            <Tab title='Contacts'>
+              <Contacts/>
+            </Tab>
+          </Tabs>
+        </Box>
+      </Box>
     );
   }
 }
@@ -16,4 +41,4 @@ function mapStateToProps(state) {
   }
 }
 
-export default connect(mapStateToProps, { logout })(Dashboard);
+export default connect(mapStateToProps, { getData })(Dashboard);

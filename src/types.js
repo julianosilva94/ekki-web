@@ -1,3 +1,8 @@
 export const USER_LOGGED_IN = 'USER_LOGGED_IN';
 export const USER_LOGGED_OUT = 'USER_LOGGED_OUT';
+
+export const GET_USER_DATA = 'GET_USER_DATA';
  
+export const GET_ALL_TRANSFERS = 'GET_ALL_TRANSFERS';
+
+export const GET_ALL_CONTACTS = 'GET_ALL_CONTACTS';

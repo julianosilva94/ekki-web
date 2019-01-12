@@ -7,6 +7,9 @@ import Routes from './routes';
 
 const theme = {
   global: {
+    colors: {
+      brand: '#00739D',
+    },
     font: {
       family: 'Roboto',
     },

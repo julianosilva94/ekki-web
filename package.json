@@ -10,6 +10,8 @@
     "prop-types": "^15.6.2",
     "react": "^16.7.0",
     "react-bootstrap": "^0.32.4",
+    "react-currency-format": "^1.0.0",
+    "react-currency-formatter": "^1.1.0",
     "react-dom": "^16.7.0",
     "react-redux": "^6.0.0",
     "react-router-dom": "^4.3.1",

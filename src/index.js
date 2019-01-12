@@ -6,7 +6,7 @@ import App from './App'
 import { userLoggedIn } from './actions/auth';
 
 if (localStorage.userJWT) {
-  const user = JSON.stringify(localStorage.user);
+  const user = JSON.parse(localStorage.user);
   store.dispatch(userLoggedIn(user));
 }
 
