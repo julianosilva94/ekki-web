@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Box, Form, FormField, Button, Anchor } from 'grommet';
-import { Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 

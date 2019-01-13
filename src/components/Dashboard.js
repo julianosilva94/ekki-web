@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Box, Heading, Button, Tabs, Tab } from 'grommet';
+import { Box, Tabs, Tab } from 'grommet';
 
 import { connect } from 'react-redux';
 import { getData } from '../actions/user';
