@@ -17,6 +17,8 @@ import {
 } from 'grommet';
 import { Trash } from 'grommet-icons';
 
+import Notification from './Notification';
+
 import { connect } from 'react-redux';
 import { fetchAllCreditCards, addCreditCard, removeCreditCard } from '../actions/creditCards';
 
@@ -32,7 +34,10 @@ const maskCardNumber = (number) => {
 
 class CreditCards extends Component {
   state = {
-    modalOpen: false
+    modalOpen: false,
+    notificationOpen: false,
+    notificationMessage: '',
+    notificationError: false,
   }
 
   componentWillMount = async () => {
@@ -52,20 +57,38 @@ class CreditCards extends Component {
       async (res) => {
         await this.props.fetchAllCreditCards();
         this.closeModal.bind(this)();
+        this.showNotification.bind(this)('Credit Card added');
       },
-    ).catch(err => alert(err.response.data.error));
+    ).catch(err => this.showNotification.bind(this)(err.response.data.error, true));
   }
 
   removeCreditCard = async (id) => {
     await this.props.removeCreditCard(id).then(
       async (res) => {
         await this.props.fetchAllCreditCards();
+        this.showNotification.bind(this)('Credit Card removed');
       }
-    ).catch(err => alert(err.response.data.error));
+    ).catch(err => this.showNotification.bind(this)(err.response.data.error, true));
+  }
+
+  showNotification = (notificationMessage, error = false) => {
+    this.setState({ 
+      notificationMessage,
+      notificationOpen: true,
+      notificationError: error
+    });
+    
+    setTimeout(() => {
+      this.closeNotification();
+    }, 5000);
+  }
+
+  closeNotification = () => {
+    this.setState({ notificationOpen: false });
   }
 
   render() {
-    const { modalOpen } = this.state;
+    const { modalOpen, notificationOpen, notificationMessage, notificationError } = this.state;
     
     return (
       <Box margin={{ top: '20px' }}>
@@ -203,6 +226,12 @@ class CreditCards extends Component {
               </Form>
             </Box>
           </Layer>
+        }
+        {notificationOpen && 
+          <Notification 
+            message={notificationMessage}
+            error={notificationError}
+            onClose={this.closeNotification.bind(this)} />
         }
       </Box>
     );
