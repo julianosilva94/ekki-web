@@ -17,11 +17,13 @@ import {
 import Currency from 'react-currency-formatter';
 import moment from 'moment';
 
+import AddCreditCardModal from './AddCreditCardModal';
 import Notification from './Notification';
 
 import { connect } from 'react-redux';
 import { fetchAllTransfers, createTransfer } from '../actions/transfers';
 import { fetchAllContacts } from '../actions/contacts';
+import { fetchAllCreditCards, addCreditCard } from '../actions/creditCards';
 import { getData as getUserData } from '../actions/user';
 
 const COLUMNS = [
@@ -31,6 +33,10 @@ const COLUMNS = [
   { name: 'value', label: 'Amount'},
 ];
 
+const maskCardNumber = (number) => {
+  return number.replace(/\d(?=\d{4})/g, "*");
+}
+
 class Transfers extends Component {
   state = {
     modalOpen: false,
@@ -39,11 +45,15 @@ class Transfers extends Component {
     notificationOpen: false,
     notificationMessage: '',
     notificationError: false,
+    amount: '1',
+    needCreditCard: false,
+    addCreditCard: false,
   }
 
   componentWillMount = async () => {
     await this.props.fetchAllTransfers();
     await this.props.fetchAllContacts();
+    await this.props.fetchAllCreditCards();
   }
 
   openModal = () => {
@@ -58,14 +68,28 @@ class Transfers extends Component {
     this.setState({ needPassword: false });
   }
 
+  openAddCreditCard = () => {
+    this.setState({ addCreditCard: true });
+  }
+
+  closeAddCreditCard = () => {
+    this.setState({ addCreditCard: false });
+  }
+
   makeTransfer = async (event) => {
-    const { value, to } = event.value;
-    const convertedValue = parseInt(value, 10);
+    const { to, creditCard } = event.value;
+    let { amount } = this.state;
+    
+    if (!amount) {
+      amount = '1';
+    }
+
+    const convertedValue = parseInt(amount, 10);
 
     const body = {
       to: to._id,
-      value: value,
-      usedCreditCard: false 
+      value: amount,
+      usedCreditCard: !!creditCard 
     };
 
     if (!this.state.needPassword && convertedValue >= 1000) {
@@ -100,6 +124,22 @@ class Transfers extends Component {
     ).catch(err => this.showNotification.bind(this)(err.response.data.error, true));
   }
 
+  handleAmountChange = (event) => {
+    let amount = event.target.value.replace(/\D/g, '');
+
+    this.setState({ amount, needCreditCard: (amount > this.props.balance) });
+  }
+
+  addCreditCard = async (event) => {
+    await this.props.addCreditCard(event.value).then(
+      async (res) => {
+        await this.props.fetchAllCreditCards();
+        this.closeAddCreditCard.bind(this)();
+        this.showNotification.bind(this)('Credit Card added');
+      },
+    ).catch(err => this.showNotification.bind(this)(err.response.data.error, true));
+  }
+
   showNotification = (notificationMessage, error = false) => {
     this.setState({ 
       notificationMessage,
@@ -117,7 +157,18 @@ class Transfers extends Component {
   }
 
   render() {
-    const { modalOpen, needPassword, notificationOpen, notificationMessage, notificationError } = this.state;
+    const { 
+      modalOpen,
+      needPassword,
+      amount,
+      needCreditCard,
+      addCreditCard,
+      notificationOpen,
+      notificationMessage,
+      notificationError
+    } = this.state;
+
+    const { contacts, creditCards, transfers } = this.props;
     
     return (
       <Box margin={{ top: '20px' }}>
@@ -136,7 +187,7 @@ class Transfers extends Component {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {this.props.transfers.length > 0 && this.props.transfers.map(transfer => (
+              {transfers.length > 0 && transfers.map(transfer => (
                 <TableRow key={transfer._id}>
                    <TableCell key='createdAt'>
                       <Text>{moment(transfer.createdAt).format('YYYY/MM/DD hh:mm:ss')}</Text>
@@ -170,7 +221,7 @@ class Transfers extends Component {
                   name='to'
                   required
                   component={Select}
-                  options={this.props.contacts}
+                  options={contacts}
                   placeholder='Select a contact'
                   labelKey='name'
                   valueKey='_id'
@@ -180,9 +231,30 @@ class Transfers extends Component {
                   name='value'
                   type='number'
                   step='any'
-                  min='0'
-                  required
+                  value={amount}
+                  onChange={this.handleAmountChange.bind(this)}
                 />
+                {needCreditCard && 
+                  <FormField
+                    label='Credit Card'
+                    name='creditCard'
+                    required
+                    component={Select}
+                    options={creditCards.map(cc => {
+                      cc.number = maskCardNumber(cc.number);
+                      return cc;
+                    })}
+                    placeholder='Select a credit card'
+                    labelKey='number'
+                    valueKey='_id'
+                  />
+                }
+                {needCreditCard && creditCards.length === 0 &&
+                  <Box>
+                    <Text color='status-critical'>Please, add a credit card</Text>
+                    <Button label='Add Credit Card' onClick={this.openAddCreditCard.bind(this)} color='brand' />
+                  </Box>
+                }
                 <Box
                   as='footer'
                   gap='small'
@@ -247,6 +319,9 @@ class Transfers extends Component {
             </Box>
           </Layer>
         }
+        {addCreditCard &&
+          <AddCreditCardModal onSubmit={this.addCreditCard.bind(this)} onCancel={this.closeAddCreditCard.bind(this)} />
+        }
         {notificationOpen && 
           <Notification 
             message={notificationMessage}
@@ -262,13 +337,16 @@ function mapStateToProps(state) {
   return {
     transfers: state.transfers,
     contacts: state.contacts,
+    creditCards: state.creditCards,
     balance: state.user.balance
   }
 }
 
 export default connect(mapStateToProps, { 
-  fetchAllTransfers, 
-  createTransfer, 
-  fetchAllContacts, 
+  fetchAllTransfers,
+  createTransfer,
+  fetchAllContacts,
+  fetchAllCreditCards,
+  addCreditCard,
   getUserData
 })(Transfers);
