@@ -39,4 +39,16 @@ export default {
     remove: (id) =>
       axios.delete(`${BASE_URL}/user/contacts/${id}`, { headers: headers }),
   },
+
+  creditCards: {
+    getAll: () =>
+      axios.get(`${BASE_URL}/credit-cards`, { headers: headers })
+        .then(res => res.data.creditCards),
+
+    add: (values) =>
+      axios.post(`${BASE_URL}/credit-cards`, values, { headers: headers }),
+
+    remove: (id) =>
+      axios.delete(`${BASE_URL}/credit-cards/${id}`, { headers: headers }),
+  },
 }

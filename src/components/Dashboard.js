@@ -7,6 +7,7 @@ import { getData } from '../actions/user';
 import AppBar from './AppBar';
 import Transfers from './Transfers';
 import Contacts from './Contacts';
+import CreditCards from './CreditCards';
 
 class Dashboard extends Component {
   componentWillMount = async () => {
@@ -23,7 +24,7 @@ class Dashboard extends Component {
               <Transfers/>
             </Tab>
             <Tab title='Credit Cards'>
-
+              <CreditCards/>
             </Tab>
             <Tab title='Contacts'>
               <Contacts/>
