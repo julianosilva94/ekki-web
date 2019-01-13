@@ -15,18 +15,20 @@ import {
   Text 
 } from 'grommet';
 import Currency from 'react-currency-formatter';
+import moment from 'moment';
+
+import Notification from './Notification';
 
 import { connect } from 'react-redux';
 import { fetchAllTransfers, createTransfer } from '../actions/transfers';
 import { fetchAllContacts } from '../actions/contacts';
 import { getData as getUserData } from '../actions/user';
-import moment from 'moment';
 
 const COLUMNS = [
   { name: 'createdAt', label: 'Date'},
   { name: 'from', label: 'From'},
   { name: 'to', label: 'To'},
-  { name: 'value', label: 'Value'},
+  { name: 'value', label: 'Amount'},
 ];
 
 class Transfers extends Component {
@@ -34,6 +36,9 @@ class Transfers extends Component {
     modalOpen: false,
     needPassword: false,
     transfer: {},
+    notificationOpen: false,
+    notificationMessage: '',
+    notificationError: false,
   }
 
   componentWillMount = async () => {
@@ -53,7 +58,7 @@ class Transfers extends Component {
     this.setState({ needPassword: false });
   }
 
-  sendMoney = async (event) => {
+  makeTransfer = async (event) => {
     const { value, to } = event.value;
     const convertedValue = parseInt(value, 10);
 
@@ -72,12 +77,13 @@ class Transfers extends Component {
           await this.props.fetchAllTransfers();
           await this.props.getUserData();
           this.closeModal.bind(this)();
+          this.showNotification.bind(this)('Transfer ok');
         }
-      ).catch(err => alert(err.response.data.error));
+      ).catch(err => this.showNotification.bind(this)(err.response.data.error, true));
     }    
   }
 
-  sendMoneyWithPassword = async (event) => {
+  makeTransferWithPassword = async (event) => {
     const { password } = event.value;
     const { transfer } = this.state;
 
@@ -89,17 +95,34 @@ class Transfers extends Component {
         await this.props.getUserData();
         this.closeModal.bind(this)();
         this.closeModalPassword.bind(this)();
+        this.showNotification.bind(this)('Transfer ok');
       }
-    ).catch(err => alert(err.response.data.error));
+    ).catch(err => this.showNotification.bind(this)(err.response.data.error, true));
+  }
+
+  showNotification = (notificationMessage, error = false) => {
+    this.setState({ 
+      notificationMessage,
+      notificationOpen: true,
+      notificationError: error
+    });
+    
+    setTimeout(() => {
+      this.closeNotification();
+    }, 5000);
+  }
+
+  closeNotification = () => {
+    this.setState({ notificationOpen: false });
   }
 
   render() {
-    const { modalOpen, needPassword } = this.state;
+    const { modalOpen, needPassword, notificationOpen, notificationMessage, notificationError } = this.state;
     
     return (
       <Box margin={{ top: '20px' }}>
         <Box width='small'>
-          <Button label='Send Money' primary onClick={this.openModal.bind(this)} />
+          <Button label='Make Transfer' primary onClick={this.openModal.bind(this)} />
         </Box>
         <Box margin={{ top: '20px' }}>
           <Table>
@@ -139,9 +162,9 @@ class Transfers extends Component {
           >
           <Box pad='medium' gap='small' width='medium'>
               <Heading level={3} margin='none'>
-                Send Money
+                Make Transfer
               </Heading>
-              <Form onSubmit={this.sendMoney.bind(this)}>
+              <Form onSubmit={this.makeTransfer.bind(this)}>
                 <FormField
                   label='To'
                   name='to'
@@ -190,7 +213,7 @@ class Transfers extends Component {
             modal
           >
             <Box pad='medium' gap='small' width='medium'>
-              <Form onSubmit={this.sendMoneyWithPassword.bind(this)}>
+              <Form onSubmit={this.makeTransferWithPassword.bind(this)}>
                   <Heading level={3} margin='none'>
                     Enter password
                   </Heading>
@@ -223,6 +246,12 @@ class Transfers extends Component {
               </Form>
             </Box>
           </Layer>
+        }
+        {notificationOpen && 
+          <Notification 
+            message={notificationMessage}
+            error={notificationError}
+            onClose={this.closeNotification.bind(this)} />
         }
       </Box>
     );
