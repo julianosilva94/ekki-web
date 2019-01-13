@@ -19,6 +19,7 @@ import Currency from 'react-currency-formatter';
 import { connect } from 'react-redux';
 import { fetchAllTransfers, createTransfer } from '../actions/transfers';
 import { fetchAllContacts } from '../actions/contacts';
+import { getData as getUserData } from '../actions/user';
 
 const COLUMNS = [
   { name: 'from', label: 'From'},
@@ -28,16 +29,14 @@ const COLUMNS = [
 
 class Transfers extends Component {
   state = {
-    modalOpen: false
+    modalOpen: false,
+    needPassword: false,
+    transfer: {},
   }
 
   componentWillMount = async () => {
     await this.props.fetchAllTransfers();
     await this.props.fetchAllContacts();
-  }
-
-  componentDidMount = () => {
-    console.log(this.props.contacts);
   }
 
   openModal = () => {
@@ -48,21 +47,52 @@ class Transfers extends Component {
     this.setState({ modalOpen: false });
   }
 
+  closeModalPassword = () => {
+    this.setState({ needPassword: false });
+  }
+
   sendMoney = async (event) => {
-    await this.props.createTransfer({ 
-      to: event.value.to._id,
-      value: event.value.value,
+    const { value, to } = event.value;
+    const convertedValue = parseInt(value, 10);
+
+    const body = {
+      to: to._id,
+      value: value,
       usedCreditCard: false 
-    }).then(
-      (res) => {
-        this.props.fetchAllTransfers();
+    };
+
+    if (!this.state.needPassword && convertedValue >= 1000) {
+      this.setState({ needPassword: true, transfer: body });
+    }
+    else {
+      await this.props.createTransfer(body).then(
+        async (res) => {
+          await this.props.fetchAllTransfers();
+          await this.props.getUserData();
+          this.closeModal.bind(this)();
+        }
+      ).catch(err => alert(err.response.data.error));
+    }    
+  }
+
+  sendMoneyWithPassword = async (event) => {
+    const { password } = event.value;
+    const { transfer } = this.state;
+
+    transfer.password = password;
+
+    await this.props.createTransfer(transfer).then(
+      async (res) => {
+        await this.props.fetchAllTransfers();
+        await this.props.getUserData();
         this.closeModal.bind(this)();
+        this.closeModalPassword.bind(this)();
       }
-    );
+    ).catch(err => alert(err.response.data.error));
   }
 
   render() {
-    const { modalOpen } = this.state;
+    const { modalOpen, needPassword } = this.state;
     
     return (
       <Box margin={{ top: '20px' }}>
@@ -123,7 +153,6 @@ class Transfers extends Component {
                   type='number'
                   step='any'
                   min='0'
-                  max={this.props.balance}
                   required
                 />
                 <Box
@@ -150,6 +179,46 @@ class Transfers extends Component {
             </Box>
           </Layer>
         }
+        {needPassword && 
+          <Layer
+            position='center'
+            modal
+          >
+            <Box pad='medium' gap='small' width='medium'>
+              <Form onSubmit={this.sendMoneyWithPassword.bind(this)}>
+                  <Heading level={3} margin='none'>
+                    Enter password
+                  </Heading>
+                  <FormField
+                    label='Password'
+                    name='password'
+                    type='password'
+                    required
+                  />
+                  <Box
+                    as='footer'
+                    gap='small'
+                    direction='row'
+                    align='center'
+                    justify='end'
+                    pad={{ top: 'medium', bottom: 'small' }}
+                    >
+                    <Button label='Cancel' onClick={this.closeModalPassword.bind(this)} color='dark-2' />
+                    <Button
+                      type='submit'
+                      label={
+                        <Text color='white'>
+                          <strong>Submit</strong>
+                        </Text>
+                      }
+                      primary
+                      color='status-ok'
+                    />
+                </Box>
+              </Form>
+            </Box>
+          </Layer>
+        }
       </Box>
     );
   }
@@ -167,4 +236,5 @@ export default connect(mapStateToProps, {
   fetchAllTransfers, 
   createTransfer, 
   fetchAllContacts, 
+  getUserData
 })(Transfers);
