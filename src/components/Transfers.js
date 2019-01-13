@@ -20,8 +20,10 @@ import { connect } from 'react-redux';
 import { fetchAllTransfers, createTransfer } from '../actions/transfers';
 import { fetchAllContacts } from '../actions/contacts';
 import { getData as getUserData } from '../actions/user';
+import moment from 'moment';
 
 const COLUMNS = [
+  { name: 'createdAt', label: 'Date'},
   { name: 'from', label: 'From'},
   { name: 'to', label: 'To'},
   { name: 'value', label: 'Value'},
@@ -113,6 +115,9 @@ class Transfers extends Component {
             <TableBody>
               {this.props.transfers.length > 0 && this.props.transfers.map(transfer => (
                 <TableRow key={transfer._id}>
+                   <TableCell key='createdAt'>
+                      <Text>{moment(transfer.createdAt).format('YYYY/MM/DD hh:mm:ss')}</Text>
+                  </TableCell>
                   <TableCell key='from'>
                       <Text>{transfer.from.name}</Text>
                   </TableCell>
